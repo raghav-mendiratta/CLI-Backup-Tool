@@ -14,6 +14,10 @@ A simple and powerful CLI tool to automate backups using `zip`, `rsync` and `AWS
 ## 🚀 How to Use
 
 ```bash
+git clone https://github.com/raghav-mendiratta/CLI-Backup-Tool.git && cd CLI-Backup-Tool
+```
+
+```bash
 bash backup.bash
 ```
 ---
