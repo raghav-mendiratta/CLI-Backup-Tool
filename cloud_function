@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Detect the system's package manager
+get_package_manager() {
+    for manager in apt dnf pacman zypper; do
+        if command -v $manager &> /dev/null; then
+            echo "$manager"
+            return
+        fi
+    done
+    echo ""
+}
+
+function cloud_aws(){
+
+package_manager=$(get_package_manager)
+
+if ! command -v aws &> /dev/null; then
+	if [[ -z "$package_manager" ]]; then
+	    echo "Package manager not found. Install AWS CLI manually."
+	    exit 1
+	elif [[ "$package_manager" == "pacman" ]]; then
+		echo "AWS not found, installing..."
+		echo ""
+		sleep 1
+		echo "Enter password to install aws"
+	    sudo pacman -Sy aws-cli --noconfirm
+	else
+		echo "AWS not found, installing..."
+		sleep 1
+		echo "Enter password to install aws"
+	    sudo "$package_manager" install awscli -y
+	fi
+fi
+# Confirm installation
+if ! command -v aws &> /dev/null; then
+    echo "AWS CLI installation failed. Please install manually."
+    exit 1
+fi
+
+echo "AWS CLI Installed Successfully"
+echo ""
+
+# Configure AWS credentials
+if [[ ! -f ~/.aws/credentials ]]; then
+    echo "AWS Credentials not found."
+    echo "Starting 'aws configure' wizard..."
+	echo ""
+    aws configure
+else
+    echo "AWS Credentials already configured."
+	echo ""
+fi
+
+# Upload file to S3
+read -p "Enter file path to upload: " file_path
+read -p "Enter S3 bucket name: " bucket_name
+
+if [[ -z "$file_path" || -z "$bucket_name" ]]; then
+    echo "Missing file path or bucket name."
+    exit 1
+fi
+
+if [[ ! -f "$file_path" ]]; then
+    echo "File not found: $file_path"
+    exit 1
+fi
+
+echo "Uploading '$file_path' to S3 bucket: $bucket_name"
+aws s3 cp "$file_path" "s3://$bucket_name/" --only-show-errors
+
+if [[ $? -eq 0 ]]; then
+    echo "Upload complete."
+else
+    echo "Upload failed. Check your AWS credentials or bucket name."
+fi
+
+}
